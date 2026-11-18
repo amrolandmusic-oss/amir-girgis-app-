@@ -1,0 +1,50 @@
+
+name: Build Amir Girgis APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download project
+        uses: actions/checkout@v4
+
+      - name: Fix project folders
+        run: |
+          mkdir -p lib assets/music assets/images
+          [ ! -f main.dart ] || mv main.dart lib/main.dart
+          [ ! -f profile.jpg ] || mv profile.jpg assets/images/profile.jpg
+          for f in *.mp3; do
+            [ -f "$f" ] || continue
+            case "$f" in
+              *ألقيت*) mv "$f" "assets/music/ألقيت بألواني وحبري.mp3" ;;
+              *شوفلي*) mv "$f" "assets/music/شوفلي حل.mp3" ;;
+            esac
+          done
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Prepare Android
+        run: flutter create . --platforms=android
+
+      - name: Install packages
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Save APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Amir-Girgis-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
